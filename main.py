@@ -7,6 +7,7 @@ from data_manager import DataManager
 import os
 from dotenv import load_dotenv
 from requests.auth import HTTPBasicAuth
+from notification_manager import NotificationManager
 load_dotenv()
 
 USERNAME = os.getenv('SHEETY_USERNAME')
@@ -22,6 +23,7 @@ sheet_data = data["prices"]
 
 flight_search = FlightSearch()
 data_manager = DataManager()
+notification_manager = NotificationManager()
 
 for item in sheet_data:
     if item["iataCode"] == "":
@@ -31,13 +33,18 @@ for item in sheet_data:
             item["iataCode"] = code
             data_manager.update_iata_code(item["id"], code)
 
-# pprint(sheet_data)
 
 for item in sheet_data:
     if item["iataCode"] != "":
-        price = flight_search.search_flights(item["iataCode"])
-        if price:
-            print(price)
+        flight = flight_search.search_flights(item["iataCode"])
+        if flight:
+            print(flight)
+            lowest_price = item["lowestPrice"]
+            print(flight.price)
+            if float(flight.price) < float(lowest_price):
+                notification_manager.send_notification(flight.origin_airport, flight.destination_airport, flight.out_date, flight.return_date, flight.price)
+            else:
+                pass
         else:
             print(f"No offers found for {item['city']}")
     else:
