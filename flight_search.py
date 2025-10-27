@@ -15,6 +15,8 @@ class FlightSearch:
         self._token = self._get_new_token()
 
 
+
+
     def _get_new_token(self):
         token_url = "https://test.api.amadeus.com/v1/security/oauth2/token"
         headers = {
@@ -35,6 +37,15 @@ class FlightSearch:
         return access_token
 
     def get_iata_code(self, city_name):
+        fallback_iata = {
+            "Tokyo": "TYO",
+            "Hong Kong": "HKG",
+            "Kuala Lumpur": "KUL",
+            "Singapore": "SIN",
+            "Bali": "DPS",
+            "Bangkok": "BKK",
+        }
+
         flight_search_url = "https://test.api.amadeus.com/v1/reference-data/locations"
         headers = {
             "Authorization": f"Bearer {self._token}",
@@ -52,6 +63,9 @@ class FlightSearch:
             iata_code = data["data"][0]["iataCode"]
             print(iata_code)
             return iata_code
+        elif city_name in fallback_iata:
+            print("using fallback iata code")
+            return fallback_iata[city_name]
         else:
             print(f"{city_name} not found")
             return None
@@ -77,5 +91,11 @@ class FlightSearch:
 
         res = requests.get(flight_search_url, headers=headers, params=params)
         flight_details = res.json()
+
+        if not flight_details.get("data"):
+            params.pop("nonStop", None)
+            print("No direct flights found — searching for indirect flights...")
+            res = requests.get(flight_search_url, headers=headers, params=params)
+            flight_details = res.json()
 
         return FlightData.find_cheapest_flight(flight_details)
