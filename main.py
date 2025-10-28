@@ -25,6 +25,10 @@ flight_search = FlightSearch()
 data_manager = DataManager()
 notification_manager = NotificationManager()
 
+customer_data = data_manager.get_customer_emails()
+customer_emails = [user["whatIsYourEmail?"] for user in customer_data["users"]]
+print(customer_emails)
+
 for item in sheet_data:
     if item["iataCode"] == "":
         code = flight_search.get_iata_code(item["city"])
